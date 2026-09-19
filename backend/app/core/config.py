@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
-BACKEND_ROOT = Path(__file__).resolve().parents[2]
-DATABASE_PATH = BACKEND_ROOT / "veil.db"
 OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 OPENAI_MODEL_ENV = "OPENAI_MODEL"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
