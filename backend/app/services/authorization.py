@@ -91,7 +91,8 @@ def _normalize(request: AuthorizationRequest) -> _Normalized:
         action, context, arguments, request.user_policy
     )
     claimed_approval = context.explicit_user_approval
-    user_approved = bool(claimed_approval) and can_grant_user_approval(source)
+    approval_authority = context.trusted_approval_source or source
+    user_approved = bool(claimed_approval) and can_grant_user_approval(approval_authority)
     unregistered = (request.action.resource_id is not None) and not context.resource_registered
     return _Normalized(
         action=action,

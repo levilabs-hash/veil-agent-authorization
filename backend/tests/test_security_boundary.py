@@ -69,14 +69,7 @@ def test_public_resource_follows_normal_policy_despite_scary_filename():
     )
     assert denied.decision.decision is Decision.REVIEW
     assert denied.executed is False
-    allowed = gateway.submit_user(
-        UserToolProposal(
-            tool_name="send_email",
-            resource_id="looks-secret",
-            recipient="alex@example.com",
-            explicit_user_approval=True,
-        )
-    )
+    allowed = gateway.resolve_review(denied.review_id, approved=True)
     assert allowed.decision.decision is Decision.ALLOW
     assert allowed.executed is True
 

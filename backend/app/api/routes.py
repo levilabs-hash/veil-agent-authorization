@@ -1,14 +1,17 @@
 """Gateway routes. Proposed tool calls enter VEIL before any simulated execution."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.demo import run_demo
+from app.api.operator import require_demo_operator
 from app.core.decisions import Decision
 from app.gateway.veil import VeilGateway
 from app.models.schemas import (
     AgentToolProposal,
     AuditEvent,
     DemoRunResponse,
+    ReviewResolveRequest,
+    ReviewSummary,
     ToolExecutionResult,
     UserToolProposal,
 )
@@ -58,5 +61,21 @@ def agent_tools(proposal: AgentToolProposal) -> ToolExecutionResult:
 
 @router.post("/user/tools", response_model=ToolExecutionResult)
 def user_tools(proposal: UserToolProposal) -> ToolExecutionResult:
-    """Trusted user path. VEIL stamps USER provenance for this channel only."""
+    """Trusted user path. Stamps USER provenance. Cannot approve sends by arguments."""
     return gateway.submit_user(proposal)
+
+
+@router.get("/reviews", response_model=list[ReviewSummary])
+def reviews() -> list[ReviewSummary]:
+    """Pending reviews. The console displays these; it does not authorize them."""
+    return gateway.pending_reviews()
+
+
+@router.post("/user/reviews/{review_id}/resolve", response_model=ToolExecutionResult)
+def resolve_review(
+    review_id: str,
+    body: ReviewResolveRequest,
+    _: None = Depends(require_demo_operator),
+) -> ToolExecutionResult:
+    """Operator-gated close-loop. Credential is checked before VEIL re-authorizes."""
+    return gateway.resolve_review(review_id, approved=body.approved)

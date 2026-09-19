@@ -95,14 +95,15 @@ def test_5_send_without_approval_review_no_execution():
 
 def test_6_user_approved_ordinary_send_allow_executes():
     gateway = VeilGateway()
-    result = gateway.submit_user(
+    pending = gateway.submit_user(
         UserToolProposal(
             tool_name="send_email",
             resource_id="reply-draft",
             recipient="alex@example.com",
-            explicit_user_approval=True,
         )
     )
+    _assert_gated(pending, decision=Decision.REVIEW, executed=False)
+    result = gateway.resolve_review(pending.review_id, approved=True)
     _assert_gated(result, decision=Decision.ALLOW, executed=True)
     assert gateway.environment.tool_executed("send_email")
     assert result.decision.provenance is ProvenanceSource.USER

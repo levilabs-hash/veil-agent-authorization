@@ -6,6 +6,7 @@ import os
 
 OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 OPENAI_MODEL_ENV = "OPENAI_MODEL"
+OPERATOR_TOKEN_ENV = "VEIL_OPERATOR_TOKEN"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
 _LOCAL_FRONTEND_ORIGINS = (
@@ -27,3 +28,8 @@ def cors_allow_origins() -> list[str]:
 def cors_allow_origin_regex() -> str | None:
     value = os.environ.get("VEIL_CORS_ORIGIN_REGEX", "").strip()
     return value or None
+
+
+def operator_token() -> str:
+    """Demo-operator secret. Empty means approval is unavailable (fail closed)."""
+    return os.environ.get(OPERATOR_TOKEN_ENV, "").strip()

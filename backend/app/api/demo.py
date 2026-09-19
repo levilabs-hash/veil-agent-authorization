@@ -65,4 +65,5 @@ def _to_response(gateway: VeilGateway, scenario: str, trace: ScenarioTrace) -> D
         matched_policy_rule=decision.matched_policy_rule,
         executed=trace.executed,
         timestamp=datetime.now(timezone.utc).isoformat(),
+        review_id=trace.result.review_id,
     )

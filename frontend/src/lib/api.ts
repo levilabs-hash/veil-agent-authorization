@@ -1,4 +1,4 @@
-import type { AuditEvent, DemoRun } from "./types";
+import type { AuditEvent, DemoRun, ReviewResolution } from "./types";
 
 function resolveApiBase(): string {
   const configured = process.env.NEXT_PUBLIC_VEIL_API_BASE?.trim();
@@ -20,13 +20,30 @@ export class BackendUnavailableError extends Error {
   }
 }
 
+export class OperatorApprovalError extends Error {
+  constructor(message = "Operator approval is unavailable") {
+    super(message);
+    this.name = "OperatorApprovalError";
+  }
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
+  const body = await response.json().catch(() => null);
   if (!response.ok) {
+    const detail =
+      body && typeof body === "object" && "detail" in body
+        ? String((body as { detail: unknown }).detail)
+        : "";
+    if (response.status === 401 || response.status === 503) {
+      throw new OperatorApprovalError(
+        detail || "Operator approval is unavailable."
+      );
+    }
     throw new BackendUnavailableError(
       `VEIL backend returned HTTP ${response.status}`
     );
   }
-  return (await response.json()) as T;
+  return body as T;
 }
 
 export async function fetchHealth(): Promise<boolean> {
@@ -60,4 +77,37 @@ export async function runDemo(scenario: string): Promise<DemoRun> {
     );
   }
   return parseJson<DemoRun>(response);
+}
+
+export async function fetchOperatorStatus(): Promise<boolean> {
+  try {
+    const response = await fetch("/api/operator/status", { cache: "no-store" });
+    if (!response.ok) return false;
+    const body = (await response.json()) as { available?: boolean };
+    return body.available === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function resolveReview(
+  reviewId: string,
+  approved: boolean
+): Promise<ReviewResolution> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `/api/reviews/${encodeURIComponent(reviewId)}/resolve`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved }),
+      }
+    );
+  } catch {
+    throw new OperatorApprovalError(
+      "Cannot reach the operator approval path. The tool was not executed."
+    );
+  }
+  return parseJson<ReviewResolution>(response);
 }

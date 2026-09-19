@@ -1,8 +1,9 @@
 """Instruction and action provenance. Required on every proposed action.
 
 Do not trust agent-supplied provenance. VEIL stamps values in VeilGateway:
-USER and approvals from submit_user / ingest_user_instruction only;
+USER and review-ID approvals from resolve_review only;
 EXTERNAL_* from ingest_external_* only; AGENT on submit_agent.
+`submit_user` stamps USER provenance but cannot grant send approval by arguments.
 """
 
 from enum import Enum

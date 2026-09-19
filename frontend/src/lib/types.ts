@@ -16,6 +16,7 @@ export type DemoRun = {
   matched_policy_rule: string;
   executed: boolean;
   timestamp: string;
+  review_id?: string | null;
 };
 
 export type AuditEvent = {
@@ -29,4 +30,22 @@ export type AuditEvent = {
   matched_policy_rule: string;
   executed: boolean;
   reason: string;
+  related_event_id?: string | null;
+  review_status?: string | null;
+  approval_source?: string | null;
+};
+
+export type ReviewResolution = {
+  decision: {
+    decision: Decision;
+    reason: string;
+    matched_policy_rule: string;
+    provenance: string;
+    requested_action: string;
+    target_resource: string | null;
+    risk_classification: string;
+  };
+  executed: boolean;
+  review_id: string | null;
+  related_event_id: string | null;
 };

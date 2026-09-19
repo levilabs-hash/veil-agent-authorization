@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchEvents, fetchHealth, runDemo } from "@/lib/api";
+import { fetchEvents, fetchHealth, fetchOperatorStatus, resolveReview, runDemo } from "@/lib/api";
 import type { AuditEvent, Decision, DemoRun } from "@/lib/types";
 
 const STAGES = [
@@ -63,6 +63,7 @@ export default function Console() {
   const [error, setError] = useState<string | null>(null);
   const [run, setRun] = useState<DemoRun | null>(null);
   const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [operatorAvailable, setOperatorAvailable] = useState(false);
   const [activeStage, setActiveStage] = useState<number>(-1);
 
   const refreshEvents = useCallback(async () => {
@@ -74,7 +75,9 @@ export default function Console() {
     let cancelled = false;
     const ping = async () => {
       const ok = await fetchHealth();
+      const operator = await fetchOperatorStatus();
       if (!cancelled) setConnected(ok);
+      if (!cancelled) setOperatorAvailable(operator);
       if (ok && !cancelled) {
         try {
           await refreshEvents();
@@ -109,6 +112,38 @@ export default function Console() {
     } catch (err) {
       setRun(null);
       setActiveStage(-1);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Cannot reach the VEIL backend. No security decision was displayed."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resolvePending(approved: boolean) {
+    if (!run?.review_id) return;
+    if (!operatorAvailable) {
+      setError("Operator approval is not configured. The tool was not executed.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await resolveReview(run.review_id, approved);
+      setRun({
+        ...run,
+        decision: result.decision.decision,
+        reason: result.decision.reason,
+        matched_policy_rule: result.decision.matched_policy_rule,
+        provenance: result.decision.provenance,
+        risk: result.decision.risk_classification,
+        executed: result.executed,
+        review_id: null,
+      });
+      await refreshEvents();
+    } catch (err) {
       setError(
         err instanceof Error
           ? err.message
@@ -296,6 +331,39 @@ export default function Console() {
                   label="Tool executed"
                   value={run.executed ? "YES" : "NO"}
                 />
+                {run.decision === "REVIEW" && run.review_id ? (
+                  <div className="pt-4">
+                    <p className="mb-2 text-xs uppercase tracking-wider text-amber-300">
+                      Pending approval
+                    </p>
+                    <p className="mb-3 font-mono text-xs text-slate-400 break-all">
+                      review {run.review_id}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busy || !operatorAvailable}
+                        onClick={() => void resolvePending(true)}
+                        className="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+                      >
+                        APPROVE
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || !operatorAvailable}
+                        onClick={() => void resolvePending(false)}
+                        className="rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 hover:bg-slate-600 disabled:opacity-50"
+                      >
+                        REJECT
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {operatorAvailable
+                        ? "Approve and reject send this review ID to VEIL through a server-side operator path. The console does not hold the operator secret or execute the tool."
+                        : "Operator approval is unavailable because VEIL_OPERATOR_TOKEN is not configured. Fail closed: the tool will not execute."}
+                    </p>
+                  </div>
+                ) : null}
               </dl>
             ) : (
               <p className="text-sm text-slate-500">
@@ -371,6 +439,18 @@ export default function Console() {
                     </span>
                     <span>|</span>
                     <span>exec={event.executed ? "YES" : "NO"}</span>
+                    {event.review_status ? (
+                      <>
+                        <span>|</span>
+                        <span>{event.review_status}</span>
+                      </>
+                    ) : null}
+                    {event.related_event_id ? (
+                      <>
+                        <span>|</span>
+                        <span>rel={event.related_event_id.slice(0, 8)}</span>
+                      </>
+                    ) : null}
                   </li>
                 ))}
               </ul>

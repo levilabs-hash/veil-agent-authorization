@@ -137,14 +137,17 @@ def test_f_external_email_confidential_exfiltration_block():
 
 def test_g_explicit_user_approval_ordinary_email_allow():
     gateway = VeilGateway()
-    result = gateway.submit_user(
+    pending = gateway.submit_user(
         UserToolProposal(
             tool_name="send_email",
             resource_id="reply-draft",
             recipient="alex@example.com",
-            explicit_user_approval=True,
         )
     )
+    _assert_decision_payload(pending.decision)
+    assert pending.decision.decision is Decision.REVIEW
+    assert pending.executed is False
+    result = gateway.resolve_review(pending.review_id, approved=True)
     _assert_decision_payload(result.decision)
     assert result.decision.decision is Decision.ALLOW
     assert result.decision.matched_policy_rule == "send_email_user_approved"

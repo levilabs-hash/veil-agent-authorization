@@ -35,6 +35,7 @@ class ActionContext(BaseModel):
     resource_classification: Classification | None = None
     resource_registered: bool = True
     explicit_user_approval: bool = False
+    trusted_approval_source: ProvenanceSource | None = None
 
 
 class ProposedAction(BaseModel):
@@ -82,7 +83,11 @@ class AgentToolProposal(BaseModel):
 
 
 class UserToolProposal(BaseModel):
-    """Trusted operator proposal. VEIL stamps USER provenance for this channel."""
+    """Trusted operator proposal. VEIL stamps USER provenance for this channel.
+
+    `explicit_user_approval` is accepted for compatibility but ignored.
+    Sending still requires `resolve_review` on a pending review ID.
+    """
 
     tool_name: str
     arguments: dict = Field(default_factory=dict)
@@ -94,6 +99,8 @@ class UserToolProposal(BaseModel):
 class ToolExecutionResult(BaseModel):
     decision: AuthorizationDecision
     executed: bool
+    review_id: str | None = None
+    related_event_id: str | None = None
 
 
 class AuditEvent(BaseModel):
@@ -108,6 +115,27 @@ class AuditEvent(BaseModel):
     decision: str
     matched_policy_rule: str
     executed: bool
+    reason: str
+    related_event_id: str | None = None
+    review_status: str | None = None
+    approval_source: str | None = None
+
+
+class ReviewResolveRequest(BaseModel):
+    """Trusted-user resolution. Identifies a review by ID, not by tool arguments."""
+
+    approved: bool
+
+
+class ReviewSummary(BaseModel):
+    """Public pending-review view. Does not include proposal arguments."""
+
+    review_id: str
+    action: str
+    resource: str | None
+    recipient: str | None
+    provenance: str
+    status: str
     reason: str
 
 
@@ -125,3 +153,4 @@ class DemoRunResponse(BaseModel):
     matched_policy_rule: str
     executed: bool
     timestamp: str
+    review_id: str | None = None
