@@ -18,6 +18,7 @@ recipient_known, and claimed user approval are discarded.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from app.core.actions import canonicalize_action
 from app.core.provenance import ProvenanceSource
@@ -166,11 +167,16 @@ class VeilGateway:
         )
         self.events.append(
             AuditEvent(
+                event_id=str(uuid4()),
                 timestamp=datetime.now(timezone.utc).isoformat(),
-                provenance=decision.provenance.value,
                 action=decision.requested_action,
+                provenance=decision.provenance.value,
                 resource=decision.target_resource,
+                risk=decision.risk_classification.value,
                 decision=decision.decision.value,
+                matched_policy_rule=decision.matched_policy_rule,
+                executed=executed,
+                reason=decision.reason,
             )
         )
         return ToolExecutionResult(decision=decision, executed=executed)

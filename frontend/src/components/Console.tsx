@@ -344,7 +344,7 @@ export default function Console() {
               <ul className="space-y-2 font-mono text-xs">
                 {events.map((event) => (
                   <li
-                    key={`${event.timestamp}-${event.action}-${event.decision}`}
+                    key={event.event_id || `${event.timestamp}-${event.action}-${event.decision}`}
                     className="flex flex-wrap gap-x-2 rounded-md border border-slate-800 bg-slate-900/70 px-3 py-2 text-slate-300"
                   >
                     <span className="text-slate-500">
@@ -355,6 +355,8 @@ export default function Console() {
                     <span>{event.action}</span>
                     <span>|</span>
                     <span>{event.resource ?? "—"}</span>
+                    <span>|</span>
+                    <span>{event.matched_policy_rule || "—"}</span>
                     <span>|</span>
                     <span
                       className={
@@ -367,6 +369,8 @@ export default function Console() {
                     >
                       {event.decision}
                     </span>
+                    <span>|</span>
+                    <span>exec={event.executed ? "YES" : "NO"}</span>
                   </li>
                 ))}
               </ul>

@@ -97,11 +97,18 @@ class ToolExecutionResult(BaseModel):
 
 
 class AuditEvent(BaseModel):
+    """Decision record written by VeilGateway. This is not an authorization authority."""
+
+    event_id: str
     timestamp: str
-    provenance: str
     action: str
+    provenance: str
     resource: str | None
+    risk: str
     decision: str
+    matched_policy_rule: str
+    executed: bool
+    reason: str
 
 
 class DemoRunResponse(BaseModel):

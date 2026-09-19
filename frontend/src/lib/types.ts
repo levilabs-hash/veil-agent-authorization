@@ -19,9 +19,14 @@ export type DemoRun = {
 };
 
 export type AuditEvent = {
+  event_id: string;
   timestamp: string;
-  provenance: string;
   action: string;
+  provenance: string;
   resource: string | null;
+  risk: string;
   decision: string;
+  matched_policy_rule: string;
+  executed: boolean;
+  reason: string;
 };
