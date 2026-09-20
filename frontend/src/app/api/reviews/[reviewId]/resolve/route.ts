@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
+import { reviewResolveUrl } from "@/lib/veilBackend";
 
 export const dynamic = "force-dynamic";
-
-function backendBase(): string {
-  return (process.env.VEIL_BACKEND_URL || "http://127.0.0.1:8000").replace(
-    /\/$/,
-    ""
-  );
-}
 
 export async function POST(
   request: Request,
@@ -28,17 +22,14 @@ export async function POST(
   } catch {
     approved = false;
   }
-  const response = await fetch(
-    `${backendBase()}/user/reviews/${encodeURIComponent(reviewId)}/resolve`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ approved }),
-    }
-  );
+  const response = await fetch(reviewResolveUrl(request, reviewId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ approved }),
+  });
   const payload = await response.json().catch(() => ({
     detail: "VEIL backend did not return JSON.",
   }));

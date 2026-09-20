@@ -115,7 +115,7 @@ Intended architecture is one Vercel project with two services (see root `vercel.
 - FastAPI backend service (`app.main:app`)
 - same-origin path `/veil-api/*` rewritten to the backend
 
-A public Vercel deployment has not been published from this environment (no Vercel authentication here). Do not treat localtunnel or laptop tunnels as the intended production host.
+A public Vercel deployment is intended at the project URL. Set `VEIL_OPERATOR_TOKEN` (same value) on **both** the Next.js and FastAPI services, and `VEIL_BACKEND_URL` only if the Next.js server cannot reach FastAPI via same-origin `/veil-api`. Leave the token out of `NEXT_PUBLIC_*` variables.
 
 ## Limitations
 
